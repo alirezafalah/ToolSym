@@ -151,15 +151,14 @@ def load_intrinsics(spec_path: str | Path | None = None) -> CameraIntrinsics:
         return CameraIntrinsics()
     raw = json.loads(Path(spec_path).read_text(encoding="utf-8"))
     cam = raw.get("camera_parameters", {})
+    defaults = CameraIntrinsics()
     return CameraIntrinsics(
-        focal_length_mm=cam.get("focal_length_mm", CameraIntrinsics.focal_length_mm),
-        sensor_width_mm=cam.get("sensor_width_mm", CameraIntrinsics.sensor_width_mm),
-        sensor_height_mm=cam.get("sensor_height_mm", CameraIntrinsics.sensor_height_mm),
-        working_distance_mm=cam.get(
-            "working_distance_mm", CameraIntrinsics.working_distance_mm
-        ),
-        image_width_px=cam.get("image_width_px", CameraIntrinsics.image_width_px),
-        image_height_px=cam.get("image_height_px", CameraIntrinsics.image_height_px),
+        focal_length_mm=cam.get("focal_length_mm", defaults.focal_length_mm),
+        sensor_width_mm=cam.get("sensor_width_mm", defaults.sensor_width_mm),
+        sensor_height_mm=cam.get("sensor_height_mm", defaults.sensor_height_mm),
+        working_distance_mm=cam.get("working_distance_mm", defaults.working_distance_mm),
+        image_width_px=cam.get("image_width_px", defaults.image_width_px),
+        image_height_px=cam.get("image_height_px", defaults.image_height_px),
     )
 
 

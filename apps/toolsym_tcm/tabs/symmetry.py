@@ -11,6 +11,7 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDoubleSpinBox,
     QFileDialog,
     QFormLayout,
@@ -24,12 +25,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+import numpy as np
+
+from toolsym.geometry import (
+    build_master_mask,
+    estimate_tilt_and_centerline,
+    rotate_to_axis,
+)
 from toolsym.io.masks import load_mask_sequence
 from toolsym.symmetry import (
     ThreeZoneConfig,
-    mean_absolute_difference,
+    phase_shift_metric,
     three_zone_classify,
 )
+from toolsym.symmetry.phase_shift import right_half_pixel_counts
 
 from apps.toolsym_tcm.tabs._base import BaseTab
 
@@ -74,6 +83,10 @@ class SymmetryTab(BaseTab):
         self._t_fracture.setValue(3500.0)
         form.addRow("T_fracture", self._t_fracture)
 
+        self._do_perspective = QCheckBox("Run perspective correction (master mask → tilt → centerline)")
+        self._do_perspective.setChecked(True)
+        form.addRow("", self._do_perspective)
+
         layout.addWidget(inputs)
 
         run = QPushButton("Compute D̄")
@@ -107,13 +120,38 @@ class SymmetryTab(BaseTab):
         try:
             masks, _ = load_mask_sequence(folder)
             self._log.appendPlainText(f"Loaded {masks.shape[0]} masks, shape {masks.shape[1:]}")
+
+            centerline_x: int | None = None
+            if self._do_perspective.isChecked():
+                # Symmetry paper §2.2: build master mask, regress tilt + centerline,
+                # rotate every frame to undo tilt, use the recovered centerline.
+                master = build_master_mask(masks)
+                tc = estimate_tilt_and_centerline(master)
+                self._log.appendPlainText(
+                    f"Tilt: {tc.tilt_deg:+.3f}°  centerline_x (top, bottom): "
+                    f"{tc.centerline_x_top:.1f}, {tc.centerline_x_bottom:.1f}"
+                )
+                if abs(tc.tilt_deg) > 0.05:
+                    self._log.appendPlainText("Rotating frames to rectify axial misalignment…")
+                    rectified = np.empty_like(masks)
+                    for i in range(masks.shape[0]):
+                        rectified[i] = rotate_to_axis(masks[i], tc.tilt_deg)
+                    masks = rectified
+                # Use centerline at the tip (bottom) of the image.
+                centerline_x = int(round(tc.centerline_x_bottom))
+
             roi = self._roi_height.value() or None
-            d_bar = mean_absolute_difference(
-                masks, n_edges=self._n_edges.value(), roi_height=roi
+            counts = right_half_pixel_counts(
+                masks, roi_height=roi, centerline_x=centerline_x
             )
+            phase = phase_shift_metric(counts, n_edges=self._n_edges.value())
+            d_bar = phase.mean_abs_diff
             cfg = ThreeZoneConfig(t_noise=self._t_noise.value(), t_fracture=self._t_fracture.value())
             result = three_zone_classify(d_bar, cfg)
-            self._log.appendPlainText(f"D̄ = {d_bar:.2f} px → zone {result.zone.value}")
+            self._log.appendPlainText(
+                f"D̄ = {d_bar:.2f} px ({phase.relative_pct:.2f}% of mean right-half area) "
+                f"→ zone {result.zone.value}"
+            )
             colour = {
                 "safe": "#50c070",
                 "warning": "#d0a050",

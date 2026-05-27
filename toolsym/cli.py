@@ -17,6 +17,9 @@ Subcommands
 ``info``
     Print the resolved DATA root, version, bundled spec, and a quick
     environment self-check (which optional dependencies are available).
+``tools``
+    List every ``tool_id`` discovered under the DATA root via the
+    legacy ELTE-TCM-46k folder convention.
 """
 
 from __future__ import annotations
@@ -115,6 +118,23 @@ def _cmd_classify(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_tools(args: argparse.Namespace) -> int:
+    from toolsym.io.dataset import iter_tools
+
+    root = data_root(args.data_root)
+    records = list(iter_tools(root, only_with_masks=not args.all))
+    if not records:
+        print(f"No tools found under {root} (expected `tools_metadata.csv` + `masks/`)")
+        return 1
+    width = max(len(r.tool_id) for r in records)
+    for r in records:
+        edges = r.n_edges if r.n_edges is not None else "?"
+        cond = r.condition or "?"
+        folder = r.mask_folder.name if r.mask_folder else "—"
+        print(f"{r.tool_id:<{width}}  edges={edges:<3}  condition={cond:<12}  {folder}")
+    return 0
+
+
 def _cmd_symmetry(args: argparse.Namespace) -> int:
     from toolsym.io.masks import load_mask_sequence
     from toolsym.symmetry import mean_absolute_difference
@@ -133,6 +153,11 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("info", help="Print environment, version, spec.").set_defaults(
         func=_cmd_info
     )
+
+    sp = sub.add_parser("tools", help="List tools discovered under DATA root.")
+    sp.add_argument("--data-root", type=Path, default=None)
+    sp.add_argument("--all", action="store_true", help="Include tools without masks.")
+    sp.set_defaults(func=_cmd_tools)
 
     sp = sub.add_parser("signal", help="Mask folder → 1D area signal CSV.")
     sp.add_argument("masks_dir", type=Path)

@@ -19,6 +19,13 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+import numpy as np
+
+from toolsym.geometry import (
+    build_master_mask,
+    estimate_tilt_and_centerline,
+    rotate_to_axis,
+)
 from toolsym.io.masks import load_mask_sequence
 from toolsym.io.voxels import save_voxel_grid, voxel_grid_to_obj
 from toolsym.reconstruction import CarverConfig, carve_visual_hull
@@ -31,16 +38,34 @@ class _CarveWorker(QThread):
     finished_ok = Signal(object)
     failed = Signal(str)
 
-    def __init__(self, masks_folder: Path, out_npz: Path, export_obj: bool, parent=None) -> None:
+    def __init__(
+        self,
+        masks_folder: Path,
+        out_npz: Path,
+        export_obj: bool,
+        rectify: bool,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._masks_folder = masks_folder
         self._out_npz = out_npz
         self._export_obj = export_obj
+        self._rectify = rectify
 
     def run(self) -> None:
         try:
             masks, _ = load_mask_sequence(self._masks_folder)
             self.progress.emit(0.05, f"Loaded {masks.shape[0]} masks")
+            if self._rectify:
+                master = build_master_mask(masks)
+                tc = estimate_tilt_and_centerline(master)
+                self.progress.emit(0.07, f"Tilt {tc.tilt_deg:+.3f}°")
+                if abs(tc.tilt_deg) > 0.05:
+                    rectified = np.empty_like(masks)
+                    for i in range(masks.shape[0]):
+                        rectified[i] = rotate_to_axis(masks[i], tc.tilt_deg)
+                    masks = rectified
+                    self.progress.emit(0.09, "Rectified all frames")
             cfg = CarverConfig.from_spec()
             result = carve_visual_hull(masks, config=cfg, progress=lambda f, m: self.progress.emit(0.1 + 0.85 * f, m))
             save_voxel_grid(
@@ -89,6 +114,10 @@ class VisualHullTab(BaseTab):
         self._export_obj = QCheckBox("Also export .obj (marching cubes)")
         form.addRow("", self._export_obj)
 
+        self._rectify = QCheckBox("Rectify tilt before carving (master mask → tilt regression)")
+        self._rectify.setChecked(True)
+        form.addRow("", self._rectify)
+
         layout.addWidget(inputs)
 
         run = QPushButton("Carve hull")
@@ -130,7 +159,9 @@ class VisualHullTab(BaseTab):
             return
         self._log.clear()
         self._bar.setValue(0)
-        self._worker = _CarveWorker(folder, out, self._export_obj.isChecked(), self)
+        self._worker = _CarveWorker(
+            folder, out, self._export_obj.isChecked(), self._rectify.isChecked(), self
+        )
         self._worker.progress.connect(self._on_progress)
         self._worker.finished_ok.connect(self._on_done)
         self._worker.failed.connect(self._on_failed)
