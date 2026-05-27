@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------------------
-# Data (NEVER committed)
+# Dataset directories (NEVER committed) — match only at the repo root to
+# avoid swallowing `toolsym/data/` (bundled spec) or other in-package dirs.
 # ---------------------------------------------------------------------------
-DATA/
-data/
-**/DATA/
+/DATA/
+/data/
 *.tif
 *.tiff
 *.TIF
