@@ -93,9 +93,11 @@ toolsym = "toolsym.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["toolsym", "apps"]
 
-[tool.hatch.build.targets.wheel.shared-data]
+[tool.hatch.build.targets.force-include]
 "toolsym/data/voxel_grid_spec.json" = "toolsym/data/voxel_grid_spec.json"
 "toolsym/resources/app_icon.ico" = "toolsym/resources/app_icon.ico"
+"toolsym/resources/app_icon.png" = "toolsym/resources/app_icon.png"
+"toolsym/widgets/theme.qss" = "toolsym/widgets/theme.qss"
 
 [tool.hatch.build.targets.sdist]
 include = [

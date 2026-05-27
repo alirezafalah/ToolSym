@@ -15,11 +15,18 @@ from apps.toolsym_sim.main_window import MainWindow
 
 
 def _resolve_icon() -> QIcon | None:
-    try:
-        from importlib.resources import files
+    from importlib.resources import files
 
-        path = files("toolsym").joinpath("resources/app_icon.ico")
-        return QIcon(str(path))
+    try:
+        anchor = files("toolsym").joinpath("resources")
+        png = anchor.joinpath("app_icon.png")
+        ico = anchor.joinpath("app_icon.ico")
+        icon = QIcon()
+        if png.is_file():
+            icon.addFile(str(png))
+        if ico.is_file():
+            icon.addFile(str(ico))
+        return icon if not icon.isNull() else None
     except (ModuleNotFoundError, FileNotFoundError):
         return None
 
