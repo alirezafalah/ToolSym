@@ -2,7 +2,9 @@
 
 from toolsym.io.dataset import (
     MASK_FOLDER_PATTERNS,
+    DatasetLayout,
     ToolRecord,
+    build_legacy_config,
     find_mask_folder,
     iter_tools,
     load_tools_metadata,
@@ -25,8 +27,10 @@ from toolsym.io.voxels import (
 
 __all__ = [
     "MASK_FOLDER_PATTERNS",
+    "DatasetLayout",
     "ToolRecord",
     "binarise",
+    "build_legacy_config",
     "find_mask_folder",
     "iter_mask_paths",
     "iter_tools",
