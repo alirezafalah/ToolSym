@@ -1,0 +1,1 @@
+"""ToolSym desktop applications."""

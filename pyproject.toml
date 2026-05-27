@@ -1,0 +1,216 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "toolsym"
+version = "0.1.0"
+description = "Tool Condition Monitoring + CNC tool simulation: 1D signal pipeline, symmetry analysis, visual hull reconstruction, and synthetic dataset generation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Alireza Falah", email = "falirezah94@gmail.com" },
+]
+keywords = [
+    "tool-condition-monitoring",
+    "cnc",
+    "computer-vision",
+    "signal-processing",
+    "visual-hull",
+    "shape-from-silhouette",
+    "industry-4.0",
+    "manufacturing",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: Manufacturing",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "opencv-python>=4.8",
+    "Pillow>=10.0",
+    "matplotlib>=3.7",
+    "pandas>=2.0",
+    "tqdm>=4.65",
+    "PySide6>=6.6",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+simulation = [
+    "pyvista>=0.43",
+    "vtk>=9.3",
+    "cadquery>=2.4",
+    "ocp-stubs>=7.7",
+]
+gpu = [
+    "pyopencl>=2024.1",
+]
+ml = [
+    "torch>=2.1",
+    "torchvision>=0.16",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-qt>=4.4",
+    "ruff>=0.6",
+    "mypy>=1.10",
+    "pre-commit>=3.7",
+    "types-PyYAML",
+    "types-Pillow",
+]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.25",
+]
+all = ["toolsym[simulation,gpu,ml,dev,docs]"]
+
+[project.urls]
+Homepage = "https://github.com/alirezafalah/ToolSym"
+Repository = "https://github.com/alirezafalah/ToolSym"
+Issues = "https://github.com/alirezafalah/ToolSym/issues"
+Dataset = "https://huggingface.co/datasets/alirezafalah/ELTE-TCM-46k"
+
+[project.scripts]
+toolsym-tcm = "apps.toolsym_tcm.__main__:main"
+toolsym-sim = "apps.toolsym_sim.__main__:main"
+toolsym = "toolsym.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["toolsym", "apps"]
+
+[tool.hatch.build.targets.wheel.shared-data]
+"toolsym/data/voxel_grid_spec.json" = "toolsym/data/voxel_grid_spec.json"
+"toolsym/resources/app_icon.ico" = "toolsym/resources/app_icon.ico"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "toolsym/",
+    "apps/",
+    "tests/",
+    "README.md",
+    "LICENSE",
+    "CITATION.cff",
+    "CHANGELOG.md",
+    "pyproject.toml",
+]
+exclude = [
+    "**/__pycache__",
+    "**/*.pyc",
+    "DATA/",
+    ".venv/",
+]
+
+# ---------------------------------------------------------------------------
+# Ruff (lint + format)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-exclude = ["docs/", "build/", "dist/", "*.ipynb"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "RUF",      # ruff-specific
+    "N",        # pep8-naming
+    "PL",       # pylint
+    "PTH",      # use pathlib
+    "TID",      # tidy imports
+    "C4",       # comprehensions
+]
+ignore = [
+    "PLR0913",  # too many arguments — common in image-processing fns
+    "PLR2004",  # magic numbers — algorithm constants are clearer inline
+    "N803",     # arg name should be lowercase — we use A,B,C,D for sinusoidal coefficients
+    "N806",     # var name should be lowercase — same
+    "E501",     # line too long — handled by formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["PLR0915", "PLR2004", "S101"]
+"apps/**/__main__.py" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ---------------------------------------------------------------------------
+# Mypy (type checking)
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+show_error_codes = true
+files = ["toolsym", "apps"]
+exclude = ["build/", "dist/", "docs/"]
+
+[[tool.mypy.overrides]]
+module = [
+    "cv2.*",
+    "pyvista.*",
+    "vtk.*",
+    "vtkmodules.*",
+    "cadquery.*",
+    "OCP.*",
+    "pyopencl.*",
+    "scipy.*",
+    "matplotlib.*",
+    "PIL.*",
+]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# Pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "-ra",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "gpu: requires a GPU / OpenCL runtime",
+    "simulation: requires the simulation extras (pyvista, vtk, cadquery)",
+    "gui: requires a display and PySide6",
+]
+
+[tool.coverage.run]
+source = ["toolsym"]
+omit = ["*/tests/*", "*/__main__.py"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]

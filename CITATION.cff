@@ -1,0 +1,62 @@
+cff-version: 1.2.0
+title: "ToolSym: A unified library for CNC tool condition monitoring and synthetic dataset generation"
+message: "If you use ToolSym in your research, please cite it as below, and consider citing the underlying papers as well."
+type: software
+authors:
+  - given-names: Alireza
+    family-names: Falah
+    email: falirezah94@gmail.com
+    affiliation: "Faculty of Informatics, Eötvös Loránd University, Budapest"
+    orcid: "https://orcid.org/0009-0003-8909-7098"
+  - given-names: Mátyás
+    family-names: Andó
+    affiliation: "Faculty of Informatics, Eötvös Loránd University, Budapest"
+  - given-names: Béla
+    family-names: Szekeres
+    affiliation: "Faculty of Informatics, Eötvös Loránd University, Budapest"
+repository-code: "https://github.com/alirezafalah/ToolSym"
+license: Apache-2.0
+version: 0.1.0
+date-released: 2026-05-27
+keywords:
+  - tool condition monitoring
+  - CNC machining
+  - computer vision
+  - signal processing
+  - visual hull
+  - shape-from-silhouette
+  - synthetic dataset generation
+  - Industry 4.0
+
+references:
+  - type: article
+    title: "Tool Condition Monitoring in CNC Systems: A Hybrid Computer Vision and Signal Processing Approach"
+    authors:
+      - given-names: Alireza
+        family-names: Falah
+      - given-names: Mátyás
+        family-names: Andó
+      - given-names: Béla
+        family-names: Szekeres
+    journal: "The International Journal of Advanced Manufacturing Technology"
+    year: 2025
+    doi: "10.1007/s00170-025-17051-z"
+  - type: article
+    title: "Automated Tool Condition Monitoring via Computer Vision: Symmetry-Based Geometric Profile Analysis for Fracture Detection"
+    authors:
+      - given-names: Alireza
+        family-names: Falah
+      - given-names: Mátyás
+        family-names: Andó
+      - given-names: Béla
+        family-names: Szekeres
+    year: 2026
+    notes: "Under review"
+  - type: dataset
+    title: "ELTE-TCM-46k: A CNC Tool Condition Image Dataset"
+    authors:
+      - given-names: Alireza
+        family-names: Falah
+    year: 2025
+    doi: "10.57967/hf/6145"
+    url: "https://huggingface.co/datasets/alirezafalah/ELTE-TCM-46k"
